@@ -23,7 +23,7 @@ async def transcript_audio_file(api_key, file):
         "response_format": "text",
     }
 
-    async with httpx.AsyncClient() as async_client:
+    async with httpx.AsyncClient(timeout=5.0) as async_client:
         response = await async_client.post(url, headers=headers, data=data, files=files)
         response.raise_for_status()  # Raise exception for 4xx/5xx responses
 
@@ -46,7 +46,7 @@ async def process_text(api_key, system_prompt, user_prompt):
         "temperature": 0
     }
 
-    async with httpx.AsyncClient() as async_client:
+    async with httpx.AsyncClient(timeout=5.0) as async_client:
         response = await async_client.post(url, json=payload, headers=headers)
         response.raise_for_status()  # Raise exception for 4xx/5xx responses
 

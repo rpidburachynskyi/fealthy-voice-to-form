@@ -2,12 +2,16 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import json
 
+from nlp.transliteration import transliterate_ukrainian_to_english
 
-def process_time_response(response):
+from elastic.business_search import search_businesses
+
+
+def process_time_llm_response(response):
     try:
         data = json.loads(response)
         if data['time']:
-            return( str({"datetime":data['time']}))
+            return {"datetime": data['time']}
         else:
             time_obj = datetime.now()
 
@@ -29,7 +33,40 @@ def process_time_response(response):
                     minutes=-(data["minutes"] or 0)
                 )
                 new_time = time_obj + time_change
-            return str({"datetime":new_time.isoformat()})
+            return {"datetime": new_time.isoformat()}
 
     except Exception:
-        return( str({"datetime": str(datetime.now().isoformat())}))
+        return {"datetime": str(datetime.now().isoformat())}
+
+
+def process_business_llm_response(response):
+    try:
+        data = json.loads(response)
+        print("Extracted business:", data["business"])
+        print("data", data)
+        if not data["business"]:
+            return {"business_id": None}
+        
+        # If there is business in Ukrainian
+        if data["language"] == "uk":
+            data["orig_uk_to_en_transliteration"] = transliterate_ukrainian_to_english(data["business"])
+            data["lemma_uk_to_en_transliteration"] = transliterate_ukrainian_to_english(data["uk_lemma"])
+
+        filtered_data = {k: v for k, v in data.items() if k != "language" and v != ""}
+        
+
+        #TODO Clean up the function
+        print("Try to search by:", set(filtered_data.values()))
+        matched_businesses = search_businesses(set(filtered_data.values()))
+        print("Matched businesses:", matched_businesses)
+        
+        # Return the matched businesses or None if no matches
+        if matched_businesses:
+            return {"businesses": matched_businesses}
+        
+        return {"business_id": None}
+        
+    except Exception as e:
+        # TODO add logging
+        print(e)
+        return {"business_id": None}

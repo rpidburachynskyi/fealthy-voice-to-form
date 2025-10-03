@@ -3,3 +3,4 @@ httpx==0.28.1
 functions-framework==3.8.2
 python-dateutil==2.9.0
 elasticsearch==8.15.0
+transliterate==1.10.2
