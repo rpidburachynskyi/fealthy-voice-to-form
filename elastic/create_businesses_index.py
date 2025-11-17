@@ -1,21 +1,11 @@
-import os
-import logging
+import sys
+from pathlib import Path
 
-from dotenv import load_dotenv
+# Add project root to path for imports from root-level modules
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from logging_config import logger
 
-from elasticsearch import Elasticsearch
-
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-load_dotenv()
-
-ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL")
-
-INDEX_NAME = "businesses"
-
-es = Elasticsearch(ELASTICSEARCH_URL)
+from elastic.es_client import es, INDEX_NAME
 
 INDEX_CONFIG = {
     "settings": {
@@ -23,19 +13,12 @@ INDEX_CONFIG = {
             "analyzer": {
                 "ngram_analyzer": {
                     "tokenizer": "standard",
-                    "filter": [
-                        "lowercase",
-                        "asciifolding",
-                        "ngram_filter"
-                    ]
+                    "filter": ["lowercase", "asciifolding", "ngram_filter"],
                 },
                 "lowercase_analyzer": {
                     "tokenizer": "standard",
-                    "filter": [
-                        "lowercase",
-                        "asciifolding"
-                    ]
-                }
+                    "filter": ["lowercase", "asciifolding"],
+                },
             },
             "normalizer": {
                 "lowercase_normalizer": {
@@ -43,47 +26,47 @@ INDEX_CONFIG = {
                     "filter": [
                         "lowercase",
                         "asciifolding",
-                        "punctuation_filter"
-                    ]
+                        "punctuation_filter",
+                    ],
                 }
             },
             "filter": {
                 "ngram_filter": {
                     "type": "ngram",
                     "min_gram": 5,
-                    "max_gram": 5
+                    "max_gram": 5,
                 },
                 "punctuation_filter": {
                     "type": "pattern_replace",
                     "pattern": "[^\\p{L}\\p{N}]",
-                    "replacement": ""
-                }
-            }
+                    "replacement": "",
+                },
+            },
         }
     },
     "mappings": {
         "properties": {
             "name": {
                 "type": "text",
-                "analyzer": "ngram_analyzer",          # partial/autocomplete
-                "search_analyzer": "ngram_analyzer",   # match n-grams properly
+                "analyzer": "ngram_analyzer",  # partial/autocomplete
+                "search_analyzer": "ngram_analyzer",  # match n-grams properly
                 "fields": {
-                    "keyword": {                       # exact match, case- & accent-insensitive
+                    "keyword": {  # exact match, case- & accent-insensitive
                         "type": "keyword",
-                        "normalizer": "lowercase_normalizer"
+                        "normalizer": "lowercase_normalizer",
                     },
-                    "full": {                          # short/full match, case- & accent-insensitive
+                    "full": {  # short/full match, case- & accent-insensitive
                         "type": "text",
-                        "analyzer": "lowercase_analyzer"
+                        "analyzer": "lowercase_analyzer",
                     },
-                    "fuzzy": {                         # fuzzy search, case- & accent-insensitive
+                    "fuzzy": {  # fuzzy search, case- & accent-insensitive
                         "type": "text",
-                        "analyzer": "lowercase_analyzer"
-                    }
-                }
+                        "analyzer": "lowercase_analyzer",
+                    },
+                },
             }
         }
-    }
+    },
 }
 
 
